@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/item_show_toast"
+        android:checkable="true"
+        android:checked="true"
+        android:title="Crash显示Toast消息"/>
+
+    <item
+        android:id="@+id/item_show_system"
+        android:checkable="true"
+        android:checked="false"
+        android:title="显示系统应用"/>
+
+    <item
+        android:id="@+id/item_filter"
+        android:title="过滤应用">
+        <menu>
+            <group android:checkableBehavior="single">
+
+                <item
+                    android:id="@+id/item_all"
+                    android:checked="true"
+                    android:title="全部"/>
+                <item
+                    android:id="@+id/item_on"
+                    android:title="已应用"/>
+                <item
+                    android:id="@+id/item_off"
+                    android:title="未应用"/>
+            </group>
+        </menu>
+    </item>
+    <item
+        android:id="@+id/item_cancel_all"
+        android:title="全部取消"/>
+    <item
+        android:id="@+id/item_help"
+        android:title="使用须知"/>
+
+</menu>
