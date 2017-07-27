@@ -2,11 +2,13 @@ package nnnn.aaaaa.nevercrash;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
+import android.app.ProgressDialog;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -17,17 +19,28 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.SearchView;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static nnnn.aaaaa.nevercrash.ArrayUtil.Filter;
+import static nnnn.aaaaa.nevercrash.ArrayUtil.filter;
+import static nnnn.aaaaa.nevercrash.ArrayUtil.map;
+
 public class MainActivity extends Activity {
     private ListView lvApps;
     private List<App> mApps;
+    private SearchView mSearchView;
     private AppAdapter mAppAdapter;
     private SharedPreferences mSharedPreferences;
     static final String PREF_ON = "on";
@@ -37,54 +50,85 @@ public class MainActivity extends Activity {
     private static final String PREF_DONT_SHOW_AGAIN = "warning_showed";
     private boolean filter_on = false;
     private boolean filter_off = false;
-    private static final String WARNING = "1.本模块需要Xposed支持\n\n" +
-            "2.模块旨在忽略目标应用运行时的错误，并非处理错误！应用后可能发生不可预料的问题，请谨慎使用！\n\n" +
-            "3.如非必须勿应用于系统应用\n\n" +
-            "4.因为各种不可描述的原因，Android应用在使用中难免会发生异常，异常不被处理将会导致闪退，而某些异常只会影响部分非核心功能的使用，这时就是这个模块的使用场景";
+
+    private List<App> mInitApps = new ArrayList<>();
+    private List<App> mFilteredApps = new ArrayList<>();
+
+    private boolean mIsSystemEnable = false;
+
+    private static final String TAG = MainActivity.class.getSimpleName();
+    private static final String ITSELF = MainActivity.class.getPackage().getName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.layout_main);
-        mSharedPreferences = getSharedPreferences(PREF_NAME, MODE_WORLD_READABLE);
+        mSharedPreferences = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
         lvApps = (ListView) findViewById(R.id.lvApps);
         mApps = new ArrayList<>();
 
 
         mAppAdapter = new AppAdapter();
         lvApps.setAdapter(mAppAdapter);
-        resetList();
 
-        warning();
+        mIsSystemEnable = mSharedPreferences.getBoolean(PREF_SHOW_SYSTEM, false);
+        initApps();
+
 
     }
 
-    private void warning() {
-        if (mSharedPreferences.getBoolean(PREF_DONT_SHOW_AGAIN, false)) return;
-        new AlertDialog.Builder(this)
-                .setTitle("使用前请认真阅读")
-                .setMessage(WARNING)
-                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                    }
-                })
-                .setNegativeButton("不再提示", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        mSharedPreferences
-                                .edit()
-                                .putBoolean(PREF_DONT_SHOW_AGAIN, true)
-                                .apply();
-                    }
-                })
-                .show();
+    private void initApps() {
+        final Set<String> pref = mSharedPreferences.getStringSet(PREF_ON, null);
+        List<PackageInfo> installedPackages = getPackageManager().getInstalledPackages(PackageManager.GET_META_DATA);
+
+        ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.setTitle(R.string.loading);
+        progressDialog.setMessage(getString(R.string.loading_message));
+        progressDialog.setCancelable(false);
+
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+                progressDialog.show();
+            }
+
+            @Override
+            protected Void doInBackground(Void... params) {
+                mInitApps = filter(map(installedPackages, packageInfo ->
+                                new App(packageInfo.applicationInfo.loadLabel(getPackageManager()).toString(),
+                                        packageInfo.applicationInfo.loadIcon(getPackageManager()), pref != null &&
+                                        pref.contains(packageInfo.packageName), packageInfo.packageName,
+                                        (packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0,
+                                        packageInfo.lastUpdateTime, packageInfo.firstInstallTime)),
+                        app -> !app.packageName.equals(ITSELF));
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                progressDialog.dismiss();
+                initFilterApps();
+            }
+        }.execute();
+
     }
+
+    private void initFilterApps() {
+        mFilteredApps.clear();
+        boolean show_system_app = mSharedPreferences.getBoolean(PREF_SHOW_SYSTEM, true);
+        if (!show_system_app)
+            mFilteredApps.addAll(filter(mInitApps, app -> !app.is_system_app));
+        else
+            mFilteredApps.addAll(mInitApps);
+        mAppAdapter.update(mInitApps);
+    }
+
 
     void updatePref() {
         Set<String> stringSet = new HashSet<>();
-        for (App app : mApps) {
+        for (App app : mFilteredApps) {
             if (app.get_it) {
                 stringSet.add(app.packageName);
             }
@@ -94,41 +138,33 @@ public class MainActivity extends Activity {
                 .apply();
     }
 
-    interface Filter {
-        boolean filter(App app);
+
+    void filterApps(Filter<App> filter) {
+        mFilteredApps.clear();
+        mFilteredApps.addAll(filter(mInitApps, app -> (mIsSystemEnable || !app.is_system_app) && filter.filter(app)));
+        mAppAdapter.update(mFilteredApps);
     }
 
-    void filter(Filter filter) {
-        List<App> apps = new ArrayList<>();
-        for (App app : mApps) {
-            if (filter.filter(app)) {
-                apps.add(app);
-            }
-        }
-        mApps = apps;
-//        mAppAdapter.notifyDataSetChanged();
+    void sort(Comparator<App> comparator) {
+        Collections.sort(mFilteredApps, comparator);
+        mAppAdapter.update(mFilteredApps);
     }
 
-    void resetList() {
-        Set<String> stringSet = mSharedPreferences.getStringSet(PREF_ON, null);
-        mApps.clear();
-        List<PackageInfo> installedPackages = getPackageManager().getInstalledPackages(0);
-        for (PackageInfo packageInfo : installedPackages) {
-            if (!mSharedPreferences.getBoolean(PREF_SHOW_SYSTEM, false))
-                if ((packageInfo.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0)
-                    continue;
 
-
-            if (packageInfo.packageName.equals("nnnn.aaaaa.nevercrash")) continue;
-            boolean get_it = stringSet != null && stringSet.contains(packageInfo.packageName);
-//            if (filter_on && !get_it) continue;
-//            if (filter_off && get_it) continue;
-            mApps.add(new App(packageInfo.applicationInfo.loadLabel(getPackageManager()).toString(),
-                    packageInfo.applicationInfo.loadIcon(getPackageManager()), get_it, packageInfo.packageName));
-        }
-//        Collections.sort(mApps);
-//        mAppAdapter.notifyDataSetChanged();
+    private void warning() {
+        if (mSharedPreferences.getBoolean(PREF_DONT_SHOW_AGAIN, false)) return;
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.using_warning_title))
+                .setMessage(getString(R.string.using_warning))
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                })
+                .setNegativeButton(getString(R.string.btn_dont_show_again), (dialog, which) -> mSharedPreferences
+                        .edit()
+                        .putBoolean(PREF_DONT_SHOW_AGAIN, true)
+                        .apply())
+                .show();
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -137,6 +173,20 @@ public class MainActivity extends Activity {
 
         menu.findItem(R.id.item_show_system).setChecked(mSharedPreferences.getBoolean(PREF_SHOW_SYSTEM, false));
         menu.findItem(R.id.item_show_toast).setChecked(mSharedPreferences.getBoolean(PREF_TOAST, true));
+        mSearchView = (SearchView) menu.findItem(R.id.item_search).getActionView();
+        mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                filterApps(app -> app.name.toLowerCase().contains(query.toLowerCase()) || app.packageName.toLowerCase().contains(query.toLowerCase()));
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                filterApps(app -> app.name.toLowerCase().contains(newText.toLowerCase()) || app.packageName.toLowerCase().contains(newText.toLowerCase()));
+                return true;
+            }
+        });
         return true;
     }
 
@@ -148,10 +198,8 @@ public class MainActivity extends Activity {
                 mSharedPreferences.edit()
                         .putBoolean(PREF_SHOW_SYSTEM, item.isChecked())
                         .apply();
-                resetList();
-                if (filter_on) filter_on();
-                if (filter_off) filter_off();
-                mAppAdapter.notifyDataSetChanged();
+                mIsSystemEnable = item.isChecked();
+                filterApps(app -> true);
                 break;
             case R.id.item_show_toast:
                 item.setChecked(!item.isChecked());
@@ -160,73 +208,77 @@ public class MainActivity extends Activity {
                         .apply();
                 break;
             case R.id.item_cancel_all:
-                for (int i = 0; i < mApps.size(); i++) {
-                    mApps.get(i).get_it = false;
-                }
+                filterApps(app -> {
+                    app.get_it = false;
+                    return true;
+                });
                 updatePref();
-                resetList();
-                mAppAdapter.notifyDataSetChanged();
                 break;
             case R.id.item_on:
                 item.setChecked(true);
-                filter_on();
-                mAppAdapter.notifyDataSetChanged();
+                filterApps(app -> app.get_it);
                 break;
             case R.id.item_off:
                 item.setChecked(true);
-                filter_off();
-                mAppAdapter.notifyDataSetChanged();
+                filterApps(app -> !app.get_it);
                 break;
             case R.id.item_all:
-                filter_on = filter_off = false;
                 item.setChecked(true);
-                resetList();
-
-                filter(new Filter() {
-                    @Override
-                    public boolean filter(App app) {
-                        return true;
-                    }
-                });
-                mAppAdapter.notifyDataSetChanged();
+                filterApps(app -> true);
                 break;
             case R.id.item_help:
                 new AlertDialog.Builder(MainActivity.this)
-                        .setTitle("使用须知")
-                        .setMessage(WARNING)
+                        .setTitle(getString(R.string.using_warning_title))
+                        .setMessage(getString(R.string.using_warning))
                         .show();
+                break;
+            case R.id.item_select_all:
+                filterApps(app -> {
+                    app.get_it = true;
+                    return true;
+                });
+                updatePref();
+                break;
+
+            case R.id.item_sort_by_name:
+                item.setChecked(true);
+                sort((a, b) -> a.name.compareTo(b.name));
+                break;
+            case R.id.item_sort_by_name_reverse:
+                item.setChecked(true);
+                sort(Collections.reverseOrder((a, b) -> a.name.compareTo(b.name)));
+                break;
+            case R.id.item_sort_by_install_time:
+                item.setChecked(true);
+                sort((a, b) -> a.installTime == b.installTime ? 0 : (a.installTime > b.installTime ? 1 : -1));
+                break;
+            case R.id.item_sort_by_install_time_reverse:
+                item.setChecked(true);
+                sort(Collections.reverseOrder((a, b) -> a.installTime == b.installTime ? 0 : (a.installTime > b.installTime ? 1 : -1)));
+                break;
+            case R.id.item_sort_by_update_time:
+                item.setChecked(true);
+                sort((a, b) -> a.updateTime == b.updateTime ? 0 : (a.updateTime > b.updateTime ? 1 : -1));
+                break;
+            case R.id.item_sort_by_update_time_reverse:
+                item.setChecked(true);
+                sort(Collections.reverseOrder((a, b) -> a.updateTime == b.updateTime ? 0 : (a.updateTime > b.updateTime ? 1 : -1)));
                 break;
         }
         return true;
     }
 
-    private void filter_on() {
-        filter_on = true;
-        filter_off = false;
-        resetList();
-        filter(new Filter() {
-            @Override
-            public boolean filter(App app) {
-                return app.get_it;
-            }
-        });
-    }
-
-    private void filter_off() {
-        filter_off = true;
-        filter_on = false;
-        resetList();
-        filter(new Filter() {
-            @Override
-            public boolean filter(App app) {
-                return !app.get_it;
-            }
-        });
-    }
 
     class AppAdapter extends BaseAdapter {
+        private List<App> mApps = new ArrayList<>();
 
         public AppAdapter() {
+        }
+
+        public void update(List<App> apps) {
+            mApps.clear();
+            mApps.addAll(apps);
+            notifyDataSetChanged();
         }
 
         @Override
@@ -250,27 +302,30 @@ public class MainActivity extends Activity {
             Holder holder;
             ImageView ivIcon;
             TextView tvName;
+            TextView tvPackageName;
+            TextView tvInstallTime;
+            TextView tvUpdateTime;
             final Switch mSwitch;
             if (convertView != null) {
                 holder = (Holder) convertView.getTag();
                 ivIcon = holder.ivIcon;
                 tvName = holder.tvName;
                 mSwitch = holder.mSwitch;
+                tvPackageName = holder.tvPackageName;
+                tvInstallTime = holder.tvInstallTime;
+                tvUpdateTime = holder.tvUpdateTime;
                 view = convertView;
             } else {
                 view = LayoutInflater.from(MainActivity.this).inflate(R.layout.item_app, parent, false);
                 ivIcon = (ImageView) view.findViewById(R.id.ivIcon);
                 tvName = (TextView) view.findViewById(R.id.tvName);
                 mSwitch = (Switch) view.findViewById(R.id.sw);
-                holder = new Holder(ivIcon, tvName, mSwitch);
-                view.setTag(holder);
+                tvPackageName = (TextView) view.findViewById(R.id.tvPackageName);
+                tvUpdateTime = (TextView) view.findViewById(R.id.tvUpdateTime);
+                tvInstallTime = (TextView) view.findViewById(R.id.tvInstallTime);
 
-/*                mSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                    @Override
-                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                        mApps.get(position).get_it = isChecked;
-                    }
-                });*/
+                holder = new Holder(ivIcon, tvName, mSwitch, tvPackageName, tvInstallTime, tvUpdateTime);
+                view.setTag(holder);
 
             }
             view.setOnClickListener(new View.OnClickListener() {
@@ -284,22 +339,19 @@ public class MainActivity extends Activity {
                     updatePref();
                 }
             });
-            mSwitch.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    boolean get_it = mApps.get(position).get_it;
-                    mApps.get(position).get_it = !get_it;
-                    updatePref();
-                }
+            mSwitch.setOnClickListener(v -> {
+                boolean get_it = mApps.get(position).get_it;
+                mApps.get(position).get_it = !get_it;
+                updatePref();
             });
+            DateFormat dateformat = new SimpleDateFormat("yyyy-MM-dd");
 
             ivIcon.setImageDrawable(mApps.get(position).icon);
             tvName.setText(mApps.get(position).name);
-//            mSwitch.setSelected(mApps.get(position).get_it);
             mSwitch.setChecked(mApps.get(position).get_it);
-
-//            Log.d("", mApps.get(position).toString());
-
+            tvPackageName.setText(mApps.get(position).packageName);
+            tvInstallTime.setText(dateformat.format(new Date(mApps.get(position).installTime)));
+            tvUpdateTime.setText(dateformat.format(new Date(mApps.get(position).updateTime)));
             return view;
         }
 
@@ -308,30 +360,39 @@ public class MainActivity extends Activity {
             ImageView ivIcon;
             TextView tvName;
             Switch mSwitch;
+            TextView tvPackageName;
+            TextView tvInstallTime;
+            TextView tvUpdateTime;
 
-            Holder(ImageView ivIcon, TextView tvName, Switch aSwitch) {
+            Holder(ImageView ivIcon, TextView tvName, Switch aSwitch, TextView tvPackageName, TextView tvInstallTime, TextView tvUpdateTime) {
                 this.ivIcon = ivIcon;
                 this.tvName = tvName;
                 this.mSwitch = aSwitch;
+                this.tvPackageName = tvPackageName;
+                this.tvInstallTime = tvInstallTime;
+                this.tvUpdateTime = tvUpdateTime;
             }
         }
     }
 
-    interface OnSwitchListener {
-        void onSwitch(int position);
-    }
 
-    class App implements Comparable<App> {
+    class App {
         String name;
         Drawable icon;
         boolean get_it;
         String packageName;
+        boolean is_system_app;
+        long updateTime;
+        long installTime;
 
-        App(String name, Drawable icon, boolean get_it, String packageName) {
+        App(String name, Drawable icon, boolean get_it, String packageName, boolean is_system_app, long updateTime, long installTime) {
             this.name = name;
             this.icon = icon;
             this.get_it = get_it;
             this.packageName = packageName;
+            this.is_system_app = is_system_app;
+            this.updateTime = updateTime;
+            this.installTime = installTime;
         }
 
         @Override
@@ -339,14 +400,7 @@ public class MainActivity extends Activity {
             return "name:" + name + " get_it:" + get_it;
         }
 
-        @Override
-        public int compareTo(App o) {
 
-            if (this.get_it = o.get_it) return this.name.compareTo(o.name);
-            else if (this.get_it && !o.get_it) return 1;
-            else if (!this.get_it && o.get_it) return -1;
-            else return this.name.compareTo(o.name);
-        }
     }
 
 }

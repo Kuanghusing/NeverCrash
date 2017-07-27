@@ -21,7 +21,7 @@
             android:value="true"/>
         <meta-data
             android:name="xposeddescription"
-            android:value="忽略运行时异常 ignore the Runtime Exception"/>
+            android:value="@string/xposed_description"/>
         <meta-data
             android:name="xposedminversion"
             android:value="53"/>

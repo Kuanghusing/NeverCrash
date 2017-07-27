@@ -5,7 +5,9 @@ import android.os.Looper;
 
 import de.robv.android.xposed.XposedHelpers;
 
-
+/**
+ * inspired by https://github.com/android-notes/Cockroach
+ */
 public class CrashHandler {
 
 
@@ -30,20 +32,17 @@ public class CrashHandler {
         sExceptionHandler = exceptionHandler;
 
         final Looper targetLooper = (Looper) XposedHelpers.callStaticMethod(Looper.class, "getMainLooper");
-        new Handler(targetLooper).post(new Runnable() {
-            @Override
-            public void run() {
+        new Handler(targetLooper).post(() -> {
 
-                while (true) {
-                    try {
-                        XposedHelpers.callStaticMethod(Looper.class, "loop");
-                    } catch (Throwable e) {
-                        if (e instanceof RuntimeException) {
-                            return;
-                        }
-                        if (sExceptionHandler != null) {
-                            sExceptionHandler.handlerException(e);
-                        }
+            while (true) {
+                try {
+                    XposedHelpers.callStaticMethod(Looper.class, "loop");
+                } catch (Throwable e) {
+                   /* if (e instanceof RuntimeException) {
+                        return;
+                    }*/
+                    if (sExceptionHandler != null) {
+                        sExceptionHandler.handlerException(e);
                     }
                 }
             }

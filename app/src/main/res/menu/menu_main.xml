@@ -4,38 +4,85 @@
         android:id="@+id/item_show_toast"
         android:checkable="true"
         android:checked="true"
-        android:title="Crash显示Toast消息"/>
+        android:title="@string/item_crash_notify" />
 
     <item
         android:id="@+id/item_show_system"
         android:checkable="true"
         android:checked="false"
-        android:title="显示系统应用"/>
+        android:title="@string/item_show_system_app" />
+
+    <item
+        android:id="@+id/item_search"
+        android:actionViewClass="android.widget.SearchView"
+        android:icon="@drawable/ic_search"
+        android:showAsAction="collapseActionView|always"
+        android:title="@string/search_title" />
 
     <item
         android:id="@+id/item_filter"
-        android:title="过滤应用">
+        android:icon="@drawable/ic_filter"
+        android:showAsAction="always"
+        android:title="@string/item_filter_app">
         <menu>
             <group android:checkableBehavior="single">
 
                 <item
                     android:id="@+id/item_all"
                     android:checked="true"
-                    android:title="全部"/>
+                    android:title="@string/item_all" />
                 <item
                     android:id="@+id/item_on"
-                    android:title="已应用"/>
+                    android:title="@string/item_selected" />
                 <item
                     android:id="@+id/item_off"
-                    android:title="未应用"/>
+                    android:title="@string/item_not_selected" />
             </group>
         </menu>
     </item>
     <item
         android:id="@+id/item_cancel_all"
-        android:title="全部取消"/>
+        android:title="@string/item_deselect_all" />
+    <item
+        android:id="@+id/item_select_all"
+        android:title="@string/item_select_all" />
     <item
         android:id="@+id/item_help"
-        android:title="使用须知"/>
+        android:title="@string/item_about" />
+
+
+    <item
+        android:id="@+id/item_sort"
+        android:icon="@drawable/ic_sort"
+        android:showAsAction="always"
+        android:title="@string/sort">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/item_sort_by_name"
+                    android:title="@string/sort_by_name" />
+
+                <item
+                    android:id="@+id/item_sort_by_install_time"
+                    android:title="@string/sort_by_install_time" />
+
+                <item
+                    android:id="@+id/item_sort_by_update_time"
+                    android:title="@string/sort_by_update_time" />
+
+                <item
+                    android:id="@+id/item_sort_by_name_reverse"
+                    android:title="@string/sort_by_name_reverse" />
+
+                <item
+                    android:id="@+id/item_sort_by_install_time_reverse"
+                    android:title="@string/sort_by_install_time_reverse" />
+
+                <item
+                    android:id="@+id/item_sort_by_update_time_reverse"
+                    android:title="@string/sort_by_update_time_reverse" />
+            </group>
+        </menu>
+    </item>
 
 </menu>

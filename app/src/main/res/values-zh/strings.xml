@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">拒绝闪退</string>
+    <string name="title_activity_settings">设置</string>
+    <string name="xposed_description">忽略app运行时的错误</string>
+    <string name="crash_tip">忽略异常</string>
+    <string name="using_warning_title">使用须知</string>
+    <string name="using_warning">1.本模块需要Xposed支持\n2.模块旨在忽略目标应用运行时的错误，并非处理错误！应用后可能发生不可预料的问题，请谨慎使用！\n\n3.如非必须勿应用于系统应用\n\n4.因为各种不可描述的原因，Android应用在使用中难免会发生异常，异常不被处理将会导致闪退，而某些异常只会影响部分非核心功能的使用，这时就是这个模块的使用场景\n5.开源：Kuanghusing/NeverCrash</string>
+    <string name="btn_dont_show_again">不再提示</string>
+
+    <string name="found_nougat_title">抱歉</string>
+    <string name="found_nougat_message"></string>
+
+    <string name="item_crash_notify">检测到闪退时弹出提示</string>
+    <string name="item_show_system_app">显示系统应用</string>
+    <string name="item_filter_app">过滤应用</string>
+    <string name="item_all">全部</string>
+    <string name="item_selected">已应用</string>
+    <string name="item_not_selected">未应用</string>
+    <string name="item_deselect_all">全部取消</string>
+    <string name="item_select_all">全部应用</string>
+    <string name="item_about">关于</string>
+
+    <string name="search_title">搜索</string>
+    <string name="sort">排序</string>
+    <string name="sort_by_name">名称</string>
+    <string name="sort_by_name_reverse">名称（降序）</string>
+    <string name="sort_by_install_time">安装时间</string>
+    <string name="sort_by_install_time_reverse">安装时间（降序）</string>
+    <string name="sort_by_update_time">更新时间</string>
+    <string name="sort_by_update_time_reverse">更新时间（降序）</string>
+    <string name="install_time">安装时间</string>
+    <string name="update_time">更新时间</string>
+    <string name="loading">请稍后</string>
+    <string name="loading_message">加载应用中</string>
+
+</resources>
