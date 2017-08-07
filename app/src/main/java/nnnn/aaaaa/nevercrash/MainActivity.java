@@ -128,7 +128,7 @@ public class MainActivity extends Activity {
 
     void updatePref() {
         Set<String> stringSet = new HashSet<>();
-        for (App app : mFilteredApps) {
+        for (App app : mInitApps) {
             if (app.get_it) {
                 stringSet.add(app.packageName);
             }
