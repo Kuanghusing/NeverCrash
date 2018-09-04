@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/item_show_toast"
-        android:checkable="true"
-        android:checked="true"
-        android:title="@string/item_crash_notify" />
-
-    <item
         android:id="@+id/item_show_system"
         android:checkable="true"
         android:checked="false"
@@ -50,6 +44,9 @@
         android:id="@+id/item_help"
         android:title="@string/item_about" />
 
+    <item
+        android:id="@+id/item_test"
+        android:title="@string/item_test" />
 
     <item
         android:id="@+id/item_sort"
@@ -58,6 +55,19 @@
         android:title="@string/sort">
         <menu>
             <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/item_sort_by_update_time_reverse"
+                    android:checked="true"
+                    android:title="@string/sort_by_update_time_reverse" />
+
+                <item
+                    android:id="@+id/item_sort_by_install_time_reverse"
+                    android:title="@string/sort_by_install_time_reverse" />
+
+                <item
+                    android:id="@+id/item_sort_by_name_reverse"
+                    android:title="@string/sort_by_name_reverse" />
+
                 <item
                     android:id="@+id/item_sort_by_name"
                     android:title="@string/sort_by_name" />
@@ -70,17 +80,9 @@
                     android:id="@+id/item_sort_by_update_time"
                     android:title="@string/sort_by_update_time" />
 
-                <item
-                    android:id="@+id/item_sort_by_name_reverse"
-                    android:title="@string/sort_by_name_reverse" />
 
-                <item
-                    android:id="@+id/item_sort_by_install_time_reverse"
-                    android:title="@string/sort_by_install_time_reverse" />
 
-                <item
-                    android:id="@+id/item_sort_by_update_time_reverse"
-                    android:title="@string/sort_by_update_time_reverse" />
+
             </group>
         </menu>
     </item>

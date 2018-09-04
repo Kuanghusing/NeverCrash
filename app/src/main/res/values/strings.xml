@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">DontCrashMe</string>
+    <string name="app_name">CatchException</string>
     <string name="title_activity_settings">Setting</string>
-    <string name="xposed_description">ignore the Runtime Exception</string>
-    <string name="crash_tip">Found Exception</string>
+    <string name="xposed_description">Catch Java Exception</string>
+    <string name="crash_tip">Catch Exception[Xposed]</string>
     <string name="using_warning_title">ReadMe</string>
     <string name="using_warning">1.It is a Xposed module, so it needs xposed to support\n2.It aims to ignoring the errors instead of handling the errors.
     it may bring unexpected problems, so use it carefully(not sure)\n3.the most simple way to use this module, apply
@@ -10,7 +10,7 @@
     <string name="btn_dont_show_again">Don\'t show again</string>
 
     <string name="item_crash_notify">notify me when crash</string>
-    <string name="item_show_system_app">show system app</string>
+    <string name="item_show_system_app">handle system apps</string>
     <string name="item_filter_app">filter</string>
     <string name="item_all">all</string>
     <string name="item_selected">selected</string>
@@ -33,5 +33,9 @@
     <string name="loading">loading</string>
     <string name="loading_message">loading, please wait</string>
 
+    <string name="xposed_not_active">Xposed module is not actived</string>
+    <string name="xposed_hint">Please active this module in Xposed Installer app and then reboot you phone</string>
+    <string name="item_test">test</string>
+    <string name="test_hint">success if app is not crash</string>
 
 </resources>

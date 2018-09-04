@@ -1,20 +1,17 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.2"
+    compileSdkVersion 27
+    buildToolsVersion "27.0.3"
     defaultConfig {
         applicationId "nnnn.aaaaa.nevercrash"
         minSdkVersion 14
-        targetSdkVersion 25
-        versionCode 3
-        versionName "0.0.3"
+        targetSdkVersion 23
+        versionCode 4
+        versionName "1.0.4"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
 
-        jackOptions {
-            enabled true
-        }
     }
     buildTypes {
         release {
@@ -29,13 +26,14 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
 //    compile 'com.android.support:appcompat-v7:25.3.1'
 
 
-    provided 'de.robv.android.xposed:api:82:sources'
-    provided 'de.robv.android.xposed:api:82'
+    compileOnly 'de.robv.android.xposed:api:82:sources'
+    compileOnly 'de.robv.android.xposed:api:82'
+//    implementation 'com.crossbowffs.remotepreferences:remotepreferences:0.6'
 }

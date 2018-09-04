@@ -49,12 +49,9 @@ public class CrashHandler {
         });
 
         sUncaughtExceptionHandler = (Thread.UncaughtExceptionHandler) XposedHelpers.callStaticMethod(Thread.class, "getDefaultUncaughtExceptionHandler");
-        XposedHelpers.callStaticMethod(Thread.class, "setDefaultUncaughtExceptionHandler", new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                if (sExceptionHandler != null) {
-                    sExceptionHandler.handlerException(e);
-                }
+        XposedHelpers.callStaticMethod(Thread.class, "setDefaultUncaughtExceptionHandler", (Thread.UncaughtExceptionHandler) (t, e) -> {
+            if (sExceptionHandler != null) {
+                sExceptionHandler.handlerException(e);
             }
         });
 
